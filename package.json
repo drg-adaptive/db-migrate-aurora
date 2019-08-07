@@ -42,8 +42,5 @@
     "ts-jest": "^24.0.2",
     "tsconfig-paths-jest": "^0.0.1",
     "typescript": "^3.5.3"
-  },
-  "resolutions": {
-    "lodash": "^4.17.13"
   }
 }
