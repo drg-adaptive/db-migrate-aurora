@@ -1,0 +1,46 @@
+{
+  "name": "@drg_adaptive/db-migrate-aurora",
+  "version": "1.0.0",
+  "description": "A db-migrate driver for aurora serverless.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/drg-adaptive/db-migrate-aurora.git"
+  },
+  "keywords": [
+    "db-migrate",
+    "db",
+    "database",
+    "migrate",
+    "migration",
+    "database",
+    "driver"
+  ],
+  "author": "Ben Force <bforce@teamdrg.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/drg-adaptive/db-migrate-aurora/issues"
+  },
+  "homepage": "https://github.com/drg-adaptive/db-migrate-aurora",
+  "dependencies": {
+    "aws-sdk": "^2.504.0",
+    "db-migrate-base": "^1.2.5",
+    "moment": "^2.11.2"
+  },
+  "devDependencies": {
+    "@types/bluebird": "^3.5.27",
+    "@types/db-migrate-base": "^0.0.6",
+    "@types/jest": "^24.0.17",
+    "db-meta": "^0.4.1",
+    "db-migrate-shared": "^1.1.2",
+    "dotenv": "^8.0.0",
+    "jest": "^24.8.0",
+    "jest-runner-tsc": "^1.5.1",
+    "ts-jest": "^24.0.2",
+    "tsconfig-paths-jest": "^0.0.1",
+    "typescript": "^3.5.3"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "rootDir": "./src",
+    "baseUrl": "./src",
+    "outDir": "./dist",
+    "noImplicitAny": true,
+    "target": "es5",
+    "inlineSourceMap": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "typeRoots": ["node_modules/@types"],
+    "paths": {
+      "@utilities/*": ["utilities/*"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}
