@@ -4,7 +4,8 @@
   "description": "A db-migrate driver for aurora serverless.",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prepack": "tsc"
   },
   "repository": {
     "type": "git",

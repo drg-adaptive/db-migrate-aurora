@@ -15,5 +15,6 @@
       "@utilities/*": ["utilities/*"]
     }
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
 }
