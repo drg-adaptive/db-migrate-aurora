@@ -18,9 +18,7 @@ yarn install
 
 ## Usage
 
-```sh
-See db-migrate for more information
-```
+See [db-migrate](https://db-migrate.readthedocs.io/en/latest/) for more information
 
 ## Run tests
 
