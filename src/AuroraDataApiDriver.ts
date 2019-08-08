@@ -169,12 +169,16 @@ export default class AuroraDataApiDriver extends BaseDriver {
     let len;
     const type = this.internals.mod.type;
 
-    if (spec.type !== type.TEXT && spec.type !== type.BLOB) {
-      len = spec.length ? `(${spec.length})` : "";
-      if (dataType === "VARCHAR" && len === "") {
-        len = "(255)";
-      }
+    if (spec.type === type.TEXT || spec.type === type.BLOB) {
+      return len;
     }
+
+    if (spec.length) {
+      len = `(${spec.length})`;
+    } else if (dataType === "VARCHAR") {
+      len = "(255)";
+    }
+
     return len;
   }
 
