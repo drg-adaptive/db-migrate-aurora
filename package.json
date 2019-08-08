@@ -1,5 +1,5 @@
 {
-  "name": "@drg_adaptive/db-migrate-aurora",
+  "name": "db-migrate-aurora",
   "version": "1.0.0",
   "description": "A db-migrate driver for aurora serverless.",
   "main": "index.js",
