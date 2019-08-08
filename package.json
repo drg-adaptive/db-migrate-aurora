@@ -4,7 +4,8 @@
   "description": "A db-migrate driver for aurora serverless.",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prepack": "tsc"
   },
   "repository": {
     "type": "git",
@@ -26,9 +27,9 @@
   },
   "homepage": "https://github.com/drg-adaptive/db-migrate-aurora",
   "dependencies": {
-    "aws-sdk": "^2.504.0",
-    "db-migrate-base": "^1.2.5",
-    "moment": "^2.11.2"
+    "aws-sdk": "^2.505.0",
+    "db-migrate-base": "^2.0.0",
+    "moment": "^2.24.0"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.27",

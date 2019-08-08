@@ -29,7 +29,6 @@ describe("can run basic queries", () => {
     );
 
     const result = await db.runSqlAsync("SELECT * from user");
-
-    console.info(result);
+    expect(result).toBeTruthy();
   });
 });

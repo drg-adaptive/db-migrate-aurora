@@ -30,3 +30,4 @@ node_modules
 test/db.config.json
 yarn-error.log
 .env
+dist
