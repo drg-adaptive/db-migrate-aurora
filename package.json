@@ -1,6 +1,6 @@
 {
   "name": "db-migrate-aurora",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A db-migrate driver for aurora serverless.",
   "main": "dist/index.js",
   "files": [
