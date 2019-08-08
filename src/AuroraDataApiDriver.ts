@@ -114,37 +114,26 @@ export default class AuroraDataApiDriver extends BaseDriver {
     }
   }
 
+  private getFieldSize(spec: any): string {
+    const len = parseInt(spec.length, 10) || 1000;
+
+    if (len > 16777216) return "LONG";
+    if (len > 65536) return "MEDIUM";
+    if (len > 256) return "";
+    return "TINY";
+  }
+
   mapDataType(spec: any) {
-    var len;
+    const size = this.getFieldSize(spec);
     const type = this.internals.mod.type;
 
     switch (spec.type) {
       case type.TEXT:
-        len = parseInt(spec.length, 10) || 1000;
-        if (len > 16777216) {
-          return "LONGTEXT";
-        }
-        if (len > 65536) {
-          return "MEDIUMTEXT";
-        }
-        if (len > 256) {
-          return "TEXT";
-        }
-        return "TINYTEXT";
+        return `${size}TEXT`;
       case type.DATE_TIME:
         return "DATETIME";
       case type.BLOB:
-        len = parseInt(spec.length, 10) || 1000;
-        if (len > 16777216) {
-          return "LONGBLOB";
-        }
-        if (len > 65536) {
-          return "MEDIUMBLOB";
-        }
-        if (len > 256) {
-          return "BLOB";
-        }
-        return "TINYBLOB";
+        return `${size}BLOB`;
       case type.BOOLEAN:
         return "TINYINT(1)";
     }
