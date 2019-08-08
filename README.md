@@ -1,4 +1,5 @@
 # Welcome to db-migrate-aurora 👋
+![stability](https://img.shields.io/badge/stability-alpha-red)
 [![npm](https://img.shields.io/npm/v/db-migrate-aurora)](https://www.npmjs.com/package/db-migrate-aurora)
 [![Maintainability](https://api.codeclimate.com/v1/badges/eadef0c673311ff3ad10/maintainability)](https://codeclimate.com/github/drg-adaptive/db-migrate-aurora/maintainability)
 [![Build Status](https://travis-ci.org/drg-adaptive/db-migrate-aurora.svg?branch=master)](https://travis-ci.org/drg-adaptive/db-migrate-aurora)
@@ -20,7 +21,26 @@ yarn install
 
 ## Usage
 
-See [db-migrate](https://db-migrate.readthedocs.io/en/latest/) for more information
+See [db-migrate](https://db-migrate.readthedocs.io/en/latest/) for more information.
+
+### Configuration Example
+
+Add the following configuration to your `database.json` file:
+
+```json
+{
+  "prod": {
+    "driver": {
+      "require": "db-migrate-aurora"
+    },
+    "database": "name of database on server...",
+    "schema": "name of schema in database...",
+    "secretArn": "ARN of a secret store containing credentials for the cluster",
+    "resourceArn": "ARN of the cluster to connect to",
+    "region": "The AWS region of the cluster (ex: us-east-1)"
+  }
+}
+```
 
 ## Run tests
 
