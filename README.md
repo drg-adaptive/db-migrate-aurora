@@ -1,4 +1,5 @@
 # Welcome to @drg_adaptive/db-migrate-aurora 👋
+[![npm](https://img.shields.io/npm/v/db-migrate-aurora)](https://www.npmjs.com/package/db-migrate-aurora)
 [![Maintainability](https://api.codeclimate.com/v1/badges/eadef0c673311ff3ad10/maintainability)](https://codeclimate.com/github/drg-adaptive/db-migrate-aurora/maintainability)
 [![Build Status](https://travis-ci.org/drg-adaptive/db-migrate-aurora.svg?branch=master)](https://travis-ci.org/drg-adaptive/db-migrate-aurora)
 [![Dependency Status](https://david-dm.org/drg-adaptive/db-migrate-aurora.svg)](https://david-dm.org/drg-adaptive/db-migrate-aurora)
