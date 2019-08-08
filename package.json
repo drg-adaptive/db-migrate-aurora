@@ -28,7 +28,10 @@
     "migrate",
     "migration",
     "database",
-    "driver"
+    "driver",
+    "aws",
+    "aurora",
+    "RDS"
   ],
   "author": "Ben Force <bforce@teamdrg.com>",
   "license": "MIT",
