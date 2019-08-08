@@ -12,7 +12,6 @@
       "email": "bforce@teamdrg.com"
     }
   ],
-  "bugs": { "url" : "https://github.com/drg-adaptive/db-migrate-aurora/issues" }
   "scripts": {
     "test": "jest",
     "build": "tsc",
@@ -33,9 +32,7 @@
   ],
   "author": "Ben Force <bforce@teamdrg.com>",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/drg-adaptive/db-migrate-aurora/issues"
-  },
+  "bugs": "https://github.com/drg-adaptive/db-migrate-aurora/issues",
   "homepage": "https://github.com/drg-adaptive/db-migrate-aurora",
   "dependencies": {
     "aws-sdk": "^2.505.0",
