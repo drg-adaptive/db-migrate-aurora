@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "prepack": "tsc"
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
