@@ -39,6 +39,9 @@
     "db-migrate-base": "^2.0.0",
     "moment": "^2.24.0"
   },
+  "peerDependencies": {
+    "db-migrate": "^0.11.6"
+  },
   "devDependencies": {
     "@types/bluebird": "^3.5.27",
     "@types/db-migrate-base": "^0.0.6",
