@@ -1,32 +1,33 @@
 language: node_js
-
-node_js:
-  - 4
-  - 5
-  - 6
-
-os:
-  - linux
-
-matrix:
-  fast_finish: true
-
-sudo: false
+node_js: '11'
 
 cache: yarn
 
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.8
-  mariadb: "10.0"
+install: yarn install
 
-before_install:
-  - export CXX=g++-4.8; export CC=gcc-4.8;
-
-before_script:
-    - mysql -e "create database db_migrate_test;"
-    - createdb db_migrate_test
-    - cp test/db.config.ci test/db.config.json
+jobs:
+  include:
+    - stage: npm release
+      if: tag IS blank
+      node_js: stable
+      script: yarn build
+      deploy:
+        provider: npm
+        email: "$NPM_EMAIL"
+        api_key: "$NPM_TOKEN"
+        skip_cleanup: true
+        tag: next
+        on:
+          branch: master
+    - stage: npm latest release
+      if: tag IS present
+      node_js: stable
+      script: yarn build
+      deploy:
+        provider: npm
+        email: "$NPM_EMAIL"
+        api_key: "$NPM_TOKEN"
+        skip_cleanup: true
+        tag: latest
+        on:
+          tags: true
