@@ -15,7 +15,8 @@
   "bugs": { "url" : "https://github.com/drg-adaptive/db-migrate-aurora/issues" }
   "scripts": {
     "test": "jest",
-    "build": "tsc"
+    "build": "tsc",
+    "postversion": "git push --follow-tags"
   },
   "repository": {
     "type": "git",
