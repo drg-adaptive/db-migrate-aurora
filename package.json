@@ -2,7 +2,17 @@
   "name": "db-migrate-aurora",
   "version": "1.0.0",
   "description": "A db-migrate driver for aurora serverless.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "files": [
+    "dist/*.js"
+  ],
+  "maintainers": [
+    {
+      "name": "Ben Force",
+      "email": "bforce@teamdrg.com"
+    }
+  ],
+  "bugs": { "url" : "https://github.com/drg-adaptive/db-migrate-aurora/issues" }
   "scripts": {
     "test": "jest",
     "build": "tsc"
