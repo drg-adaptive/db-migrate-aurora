@@ -906,7 +906,7 @@ db-migrate-base@^2.0.0:
   dependencies:
     bluebird "^3.1.1"
 
-db-migrate-shared@^1.1.2:
+db-migrate-shared@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/db-migrate-shared/-/db-migrate-shared-1.2.0.tgz#6125be1b3a5e661229fc75d50c85f6c3ffadbede"
   integrity sha512-65k86bVeHaMxb2L0Gw3y5V+CgZSRwhVQMwDMydmw5MvIpHHwD6SmBciqIwHsZfzJ9yzV/yYhdRefRM6FV5/siw==

@@ -1,5 +1,4 @@
 import {
-  Base as BaseDriver,
   InternalOptions,
   CallbackFunction,
   ColumnSpec,
@@ -8,16 +7,50 @@ import {
   RemoveForeignKeyOptions
 } from "db-migrate-base";
 
+const BaseDriver = require("db-migrate-base");
+
 import * as util from "util";
 import * as moment from "moment";
 import * as AWS from "aws-sdk";
-import Bluebird from "bluebird";
+import Bluebird = require("bluebird");
+
+function getFieldSize(spec: any): string {
+  const len = parseInt(spec.length, 10) || 1000;
+
+  if (len > 16777216) return "LONG";
+  if (len > 65536) return "MEDIUM";
+  if (len > 256) return "";
+  return "TINY";
+}
+
+function findColumnLength(
+  spec: ColumnSpec & IColumnSpec,
+  dataType: string,
+  type: any
+): string | undefined {
+  let len;
+
+  if (spec.type === type.TEXT || spec.type === type.BLOB) {
+    return len;
+  }
+
+  if (spec.length) {
+    len = `(${spec.length})`;
+  } else if (dataType === "VARCHAR") {
+    len = "(255)";
+  }
+
+  return len;
+}
 
 export interface IInternalOptions extends InternalOptions {
   notransactions?: boolean;
   migrationTable?: string;
   seedTable?: string;
   dryRun?: boolean;
+  rdsParams?: RDSParams;
+  connection: AWS.RDSDataService;
+  currentTransaction: string;
 }
 
 // @ts-ignore
@@ -47,84 +80,53 @@ export interface RDSParams {
 }
 
 export default class AuroraDataApiDriver extends BaseDriver {
-  private connection: AWS.RDSDataService;
-  private currentTransaction?: string;
+  _escapeDDL: string;
+  _escapeString: string;
 
-  constructor(
-    private internals: IInternalOptions,
-    private rdsParams: RDSParams
-  ) {
+  constructor(private internals: IInternalOptions, rdsParams: RDSParams) {
     super(internals);
 
-    this.addSyncMethods();
+    this._escapeDDL = "`";
+    this._escapeString = "'";
 
-    this.connection = new AWS.RDSDataService({
+    this.internals.rdsParams = rdsParams;
+    this.internals.connection = new AWS.RDSDataService({
       apiVersion: "2018-08-01",
       region: rdsParams.region
     });
   }
 
-  addSyncMethods() {
-    Object.keys(this).forEach((key: string) => {
-      if (!key.endsWith("Async")) {
-        return;
-      }
-
-      // @ts-ignore
-      const original = this[key] as (...args: any[]) => Bluebird<any>;
-      const newKey = key.replace("Async", "");
-
-      // @ts-ignore
-      this[newKey] = function(...args: any[]) {
-        const callback: CallbackFunction = args.pop();
-
-        original.call(this, args).then(callback);
-      };
-    });
-  }
-
-  init() {}
-
   // @ts-ignore
-  async startMigrationAsync(): Bluebird<any> {
+  async startMigration(): Bluebird<any> {
     if (!this.internals.notransactions) {
       const { transactionId } = await this.connection
         .beginTransaction({
-          resourceArn: this.rdsParams.resourceArn,
-          secretArn: this.rdsParams.secretArn,
-          database: this.rdsParams.database,
-          schema: this.rdsParams.schema
+          resourceArn: this.internals.rdsParams.resourceArn,
+          secretArn: this.internals.rdsParams.secretArn,
+          database: this.internals.rdsParams.database,
+          schema: this.internals.rdsParams.schema
         })
         .promise();
 
-      this.currentTransaction = transactionId;
+      this.internals.currentTransaction = transactionId;
     }
   }
 
   // @ts-ignore
-  async endMigrationAsync(): Bluebird<any> {
+  async endMigration(): Bluebird<any> {
     if (!this.internals.notransactions) {
       await this.connection
         .commitTransaction({
-          resourceArn: this.rdsParams.resourceArn,
-          secretArn: this.rdsParams.secretArn,
-          transactionId: this.currentTransaction
+          resourceArn: this.internals.rdsParams.resourceArn,
+          secretArn: this.internals.rdsParams.secretArn,
+          transactionId: this.internals.currentTransaction
         })
         .promise();
     }
   }
 
-  private getFieldSize(spec: any): string {
-    const len = parseInt(spec.length, 10) || 1000;
-
-    if (len > 16777216) return "LONG";
-    if (len > 65536) return "MEDIUM";
-    if (len > 256) return "";
-    return "TINY";
-  }
-
   mapDataType(spec: any) {
-    const size = this.getFieldSize(spec);
+    const size = getFieldSize(spec);
     const type = this.internals.mod.type;
 
     switch (spec.type) {
@@ -150,7 +152,7 @@ export default class AuroraDataApiDriver extends BaseDriver {
     const escapedName = util.format("`%s`", name);
     const dataType = this.mapDataType(spec);
 
-    let len = this.findColumnLength(spec, dataType);
+    let len = findColumnLength(spec, dataType, this.internals.mod.type);
     var constraint = this.createColumnConstraint(
       spec,
       options,
@@ -163,23 +165,6 @@ export default class AuroraDataApiDriver extends BaseDriver {
         " "
       )
     };
-  }
-
-  private findColumnLength(spec: ColumnSpec & IColumnSpec, dataType: string) {
-    let len;
-    const type = this.internals.mod.type;
-
-    if (spec.type === type.TEXT || spec.type === type.BLOB) {
-      return len;
-    }
-
-    if (spec.length) {
-      len = `(${spec.length})`;
-    } else if (dataType === "VARCHAR") {
-      len = "(255)";
-    }
-
-    return len;
   }
 
   createColumnConstraint(
@@ -253,50 +238,45 @@ export default class AuroraDataApiDriver extends BaseDriver {
     return { foreignKey: cb, constraints: constraint.join(" ") };
   }
 
-  renameTableAsync(tableName: string, newTableName: string): Bluebird<any> {
+  renameTable(tableName: string, newTableName: string): Bluebird<any> {
     const sql = `RENAME TABLE \`${tableName}\` TO \`${newTableName}\``;
-    return this.runSqlAsync(sql);
+    return this.runSql(sql);
   }
 
-  createDatabaseAsync(dbName: string, options: any): Bluebird<any> {
+  createDatabase(dbName: string, options: any): Bluebird<any> {
     var spec = "";
     const ifNotExists = options.ifNotExists === true ? "IF NOT EXISTS" : "";
 
-    return this.runSqlAsync(
-      `CREATE DATABASE ${ifNotExists} \`${dbName}\` ${spec}`
-    );
+    return this.runSql(`CREATE DATABASE ${ifNotExists} \`${dbName}\` ${spec}`);
   }
 
-  async switchDatabaseAsync(
+  async switchDatabase(
     options: ISwitchDatabaseOptions | string
   ): Bluebird<any> {
     if (typeof options === "string") {
-      await this.allAsync(`USE \`${options}\``);
+      await this.all(`USE \`${options}\``);
     } else if (options && options.database) {
-      await this.allAsync(`USE \`${options.database}\``);
+      await this.all(`USE \`${options.database}\``);
     }
   }
 
-  dropDatabaseAsync(
-    dbName: string,
-    options?: IDropDatabaseOptions
-  ): Bluebird<any> {
+  dropDatabase(dbName: string, options?: IDropDatabaseOptions): Bluebird<any> {
     let ifExists = "";
 
     if (options) {
       ifExists = "IF EXISTS";
     }
 
-    return this.runSqlAsync(`DROP DATABASE ${ifExists} \`${dbName}\``);
+    return this.runSql(`DROP DATABASE ${ifExists} \`${dbName}\``);
   }
 
-  removeColumnAsync(tableName: string, columnName: string): Bluebird<any> {
-    return this.runSqlAsync(
+  removeColumn(tableName: string, columnName: string): Bluebird<any> {
+    return this.runSql(
       `ALTER TABLE \`${tableName}\` DROP COLUMN \`${columnName}\``
     );
   }
 
-  addIndexAsync(
+  addIndex(
     tableName: string,
     indexName: string,
     columns: string | Array<string | IColumnSpec>,
@@ -321,10 +301,10 @@ export default class AuroraDataApiDriver extends BaseDriver {
     var sql = `ALTER TABLE \`${tableName}\` ADD ${
       unique ? "UNIQUE " : ""
     } INDEX \`${indexName}\` (${columnsList.join(", ")})`;
-    return this.runSqlAsync(sql);
+    return this.runSql(sql);
   }
 
-  removeIndexAsync(tableName: string, indexName?: string): Bluebird<any> {
+  removeIndex(tableName: string, indexName?: string): Bluebird<any> {
     // tableName is optional for other drivers, but required for mySql.
     // So, check the args to ensure they are valid
     if (!indexName) {
@@ -333,24 +313,24 @@ export default class AuroraDataApiDriver extends BaseDriver {
       );
     }
 
-    return this.runSqlAsync(`DROP INDEX \`${indexName}\` ON \`${tableName}\``);
+    return this.runSql(`DROP INDEX \`${indexName}\` ON \`${tableName}\``);
   }
 
-  async renameColumnAsync(
+  async renameColumn(
     tableName: string,
     oldColumnName: string,
     newColumnName: string
   ): Bluebird<any> {
     const columnTypeSql = `SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '${tableName}' AND COLUMN_NAME = '${oldColumnName}'`;
 
-    const result = await this.runSqlAsync(columnTypeSql);
+    const result = await this.runSql(columnTypeSql);
     const columnType = result[0].COLUMN_TYPE;
     const alterSql = `ALTER TABLE \`${tableName}\` CHANGE \`${oldColumnName}\` \`${newColumnName}\` ${columnType}`;
 
-    return this.runSqlAsync(alterSql);
+    return this.runSql(alterSql);
   }
 
-  async changeColumnAsync(
+  async changeColumn(
     tableName: string,
     columnName: string,
     columnSpec: ColumnSpec & IColumnSpec
@@ -361,19 +341,22 @@ export default class AuroraDataApiDriver extends BaseDriver {
     }`;
 
     if (columnSpec.unique === false) {
-      await this.removeIndexAsync(tableName, columnName);
+      await this.removeIndex(tableName, columnName);
     }
 
-    await this.runSqlAsync(sql);
+    await this.runSql(sql);
 
     if (constraint.foreignKey) {
       return constraint.foreignKey();
     }
   }
 
-  private addPrivateTableData(name: string, tableName: string): Bluebird<any> {
+  protected addPrivateTableData(
+    name: string,
+    tableName: string
+  ): Bluebird<any> {
     var formattedDate = moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
-    return this.runSqlAsync(
+    return this.runSql(
       `INSERT INTO \`${tableName}\ (\`name\`, \`run_on\`) VALUES (:name, :run_on)`,
       [
         { name: "name", value: { stringValue: name } },
@@ -382,15 +365,15 @@ export default class AuroraDataApiDriver extends BaseDriver {
     );
   }
 
-  addMigrationRecordAsync(name: string): Bluebird<any> {
+  addMigrationRecord(name: string): Bluebird<any> {
     return this.addPrivateTableData(name, this.internals.migrationTable);
   }
 
-  addSeedRecordAsync(name: string): Bluebird<any> {
+  addSeedRecord(name: string): Bluebird<any> {
     return this.addPrivateTableData(name, this.internals.seedTable);
   }
 
-  addForeignKeyAsync(
+  addForeignKey(
     tableName: string,
     referencedTableName: string,
     keyName: string,
@@ -411,65 +394,83 @@ export default class AuroraDataApiDriver extends BaseDriver {
       rules.onUpdate || "NO ACTION"
     );
 
-    return this.runSqlAsync(sql);
+    return this.runSql(sql);
   }
 
-  async removeForeignKeyAsync(
+  async removeForeignKey(
     tableName: string,
     keyName: string,
     options?: RemoveForeignKeyOptions
   ): Bluebird<any> {
     const sql = `ALTER TABLE \`${tableName}\` DROP FOREIGN KEY \`${keyName}\``;
 
-    await this.runSqlAsync(sql);
+    await this.runSql(sql);
 
     if (options && options.dropIndex) {
-      return this.runSqlAsync(
+      return this.runSql(
         `ALTER TABLE \`${tableName}\` DROP INDEX \`${keyName}\``
       );
     }
   }
 
-  runSqlAsync(
+  runSql(
     sql?: string,
     parameters?: Array<AWS.RDSDataService.SqlParameter>
   ): Bluebird<any> {
-    this.logSqlArgs(arguments);
+    this.internals.mod.log.sql.apply(null, arguments);
 
     if (this.internals.dryRun) {
       return Bluebird.resolve();
     }
 
-    console.info(parameters);
-
     const params: AWS.RDSDataService.ExecuteStatementRequest = {
-      secretArn: this.rdsParams.secretArn,
-      resourceArn: this.rdsParams.resourceArn,
-      database: this.rdsParams.database,
-      schema: this.rdsParams.schema,
-      transactionId: this.currentTransaction,
+      secretArn: this.internals.rdsParams.secretArn,
+      resourceArn: this.internals.rdsParams.resourceArn,
+      database: this.internals.rdsParams.database,
+      schema: this.internals.rdsParams.schema,
+      transactionId: this.internals.currentTransaction,
       parameters,
       sql
     };
 
-    const executeStatement = Bluebird.promisify(
-      this.connection.executeStatement
-    ).bind(this.connection);
-    return executeStatement(params);
+    // @ts-ignore
+    const exec = Bluebird.promisify(this.internals.connection.executeStatement);
+    return exec.call(this.internals.connection, params);
   }
 
-  private logSqlArgs(...args: any[]) {
-    this.internals.mod.log.sql.apply(null, args);
-  }
-
-  allAsync(
+  all(
     sql: string,
     parameters?: Array<AWS.RDSDataService.SqlParameter>
   ): Bluebird<any> {
-    return this.runSqlAsync(sql, parameters);
+    return this.runSql(sql, parameters);
   }
 
-  closeAsync(): Bluebird<any> {
+  close(): Bluebird<any> {
     return Bluebird.resolve();
   }
 }
+
+// function addSyncMethods() {
+//   Object.keys(AuroraDataApiDriver.prototype).forEach((key: string) => {
+//     if (!key.endsWith("Async")) {
+//       return;
+//     }
+
+//     // @ts-ignore
+//     const original = AuroraDataApiDriver.prototype[key] as (
+//       ...args: any[]
+//     ) => Bluebird<any>;
+//     const newKey = key.replace("Async", "");
+
+//     // @ts-ignore
+//     AuroraDataApiDriver.prototype[newKey] = function(...args: any[]) {
+//       const callback: CallbackFunction = args.pop();
+
+//       original.apply(this, args).then(callback);
+//     };
+//   });
+
+//   return AuroraDataApiDriver;
+// }
+
+// export default addSyncMethods();

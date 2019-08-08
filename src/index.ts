@@ -1,8 +1,5 @@
 import { InternalOptions, CallbackFunction } from "db-migrate-base";
-import AuroraDataApiDriver, {
-  IInternalOptions,
-  RDSParams
-} from "./AuroraDataApiDriver";
+import AuroraDataApiDriver, { RDSParams } from "./AuroraDataApiDriver";
 var AWS = require("aws-sdk");
 
 export function connect(
@@ -10,6 +7,7 @@ export function connect(
   intern: InternalOptions,
   callback: CallbackFunction
 ) {
+  console.info(config);
   // @ts-ignore
   callback(null, new AuroraDataApiDriver(intern, config));
 }
