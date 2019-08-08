@@ -369,13 +369,10 @@ export default class AuroraDataApiDriver extends BaseDriver {
     }
   }
 
-  private static getInternalTableInsert = (tableName: string): string =>
-    `INSERT INTO \`${tableName}\ (\`name\`, \`run_on\`) VALUES (:name, :run_on)`;
-
-  addMigrationRecordAsync(name: string): Bluebird<any> {
+  private addPrivateTableData(name: string, tableName: string): Bluebird<any> {
     var formattedDate = moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
     return this.runSqlAsync(
-      AuroraDataApiDriver.getInternalTableInsert(this.internals.migrationTable),
+      `INSERT INTO \`${tableName}\ (\`name\`, \`run_on\`) VALUES (:name, :run_on)`,
       [
         { name: "name", value: { stringValue: name } },
         { name: "run_on", value: { stringValue: formattedDate } }
@@ -383,15 +380,12 @@ export default class AuroraDataApiDriver extends BaseDriver {
     );
   }
 
+  addMigrationRecordAsync(name: string): Bluebird<any> {
+    return this.addPrivateTableData(name, this.internals.migrationTable);
+  }
+
   addSeedRecordAsync(name: string): Bluebird<any> {
-    var formattedDate = moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
-    return this.runSqlAsync(
-      AuroraDataApiDriver.getInternalTableInsert(this.internals.seedTable),
-      [
-        { name: "name", value: { stringValue: name } },
-        { name: "run_on", value: { stringValue: formattedDate } }
-      ]
-    );
+    return this.addPrivateTableData(name, this.internals.seedTable);
   }
 
   addForeignKeyAsync(
