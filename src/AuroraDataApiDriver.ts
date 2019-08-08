@@ -201,13 +201,14 @@ export default class AuroraDataApiDriver extends BaseDriver {
       constraint.push("UNIQUE");
     }
 
-    if (spec.engine && typeof spec.engine === "string") {
-      constraint.push("ENGINE='" + spec.engine + "'");
+    function addConstraint(label: string, value?: string) {
+      if (!value || typeof value !== "string") return;
+
+      constraint.push(`${label}='${value}'`);
     }
 
-    if (spec.rowFormat && typeof spec.rowFormat === "string") {
-      constraint.push("ROW_FORMAT='" + spec.rowFormat + "'");
-    }
+    addConstraint("ENGINE", spec.engine);
+    addConstraint("ROW_FORMAT", spec.rowFormat);
 
     if (spec.onUpdate && spec.onUpdate.startsWith("CURRENT_TIMESTAMP")) {
       constraint.push("ON UPDATE " + spec.onUpdate);
