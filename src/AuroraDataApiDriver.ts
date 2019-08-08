@@ -147,17 +147,10 @@ export default class AuroraDataApiDriver extends BaseDriver {
     options?: any,
     tableName?: string
   ): ColumnDef {
-    var escapedName = util.format("`%s`", name),
-      t = this.mapDataType(spec),
-      len;
-    const type = this.internals.mod.type;
+    const escapedName = util.format("`%s`", name);
+    const dataType = this.mapDataType(spec);
 
-    if (spec.type !== type.TEXT && spec.type !== type.BLOB) {
-      len = spec.length ? util.format("(%s)", spec.length) : "";
-      if (t === "VARCHAR" && len === "") {
-        len = "(255)";
-      }
-    }
+    let len = this.findColumnLength(spec, dataType);
     var constraint = this.createColumnConstraint(
       spec,
       options,
@@ -166,8 +159,23 @@ export default class AuroraDataApiDriver extends BaseDriver {
     );
     return {
       foreignKey: constraint.foreignKey,
-      constraints: [escapedName, t, len, constraint.constraints].join(" ")
+      constraints: [escapedName, dataType, len, constraint.constraints].join(
+        " "
+      )
     };
+  }
+
+  private findColumnLength(spec: ColumnSpec & IColumnSpec, dataType: string) {
+    let len;
+    const type = this.internals.mod.type;
+
+    if (spec.type !== type.TEXT && spec.type !== type.BLOB) {
+      len = spec.length ? `(${spec.length})` : "";
+      if (dataType === "VARCHAR" && len === "") {
+        len = "(255)";
+      }
+    }
+    return len;
   }
 
   createColumnConstraint(
