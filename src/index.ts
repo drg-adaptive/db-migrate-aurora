@@ -7,7 +7,6 @@ export function connect(
   intern: InternalOptions,
   callback: CallbackFunction
 ) {
-  console.info(config);
   // @ts-ignore
   callback(null, new AuroraDataApiDriver(intern, config));
 }
