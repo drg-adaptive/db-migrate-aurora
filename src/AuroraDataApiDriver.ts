@@ -434,15 +434,31 @@ export default class AuroraDataApiDriver extends BaseDriver {
     };
 
     // @ts-ignore
-    const exec = Bluebird.promisify(this.internals.connection.executeStatement);
-    return exec.call(this.internals.connection, params);
+    const exec = Bluebird.promisify(
+      this.internals.connection.executeStatement
+    ).bind(this.internals.connection);
+
+    return exec(params);
   }
 
-  all(
-    sql: string,
-    parameters?: Array<AWS.RDSDataService.SqlParameter>
-  ): Bluebird<any> {
-    return this.runSql(sql, parameters);
+  all(sql: string, callback?: Function): Bluebird<any> | any {
+    let result;
+    let error;
+    try {
+      result = this.runSql(sql);
+    } catch (ex) {
+      error = ex;
+    }
+
+    if (callback) {
+      callback(error, result);
+    }
+
+    if (error) {
+      throw error;
+    }
+
+    return result;
   }
 
   close(): Bluebird<any> {
