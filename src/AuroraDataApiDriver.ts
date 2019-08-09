@@ -352,33 +352,33 @@ export default class AuroraDataApiDriver extends BaseDriver {
 
   protected addPrivateTableData(
     name: string,
-    tableName: string
+    tableName: string,
+    callback: (err: any, value?: any) => any
   ): Bluebird<any> {
-    return this.runSql(
-      `INSERT INTO \`${tableName}\` (name, run_on) VALUES (:name, CURRENT_TIMESTAMP())`,
-      [{ name: "name", value: { stringValue: name } }]
-    );
-  }
-
-  addMigrationRecord(
-    name: string,
-    callback: (value: any) => any
-  ): Bluebird<any> {
-    const tableName = this.internals.migrationTable;
     return this.runSql(
       `INSERT INTO \`${tableName}\` (name, run_on) VALUES (:name, CURRENT_TIMESTAMP())`,
       [{ name: "name", value: { stringValue: name } }]
     )
-      .then(callback)
+      .then((result: any) => callback(undefined, result))
       .catch((err: any) => callback(err));
   }
 
-  addSeedRecord(name: string): Bluebird<any> {
-    const tableName = this.internals.seedTable;
-    return this.runSql(
-      `INSERT INTO \`${tableName}\` (name, run_on) VALUES (:name, CURRENT_TIMESTAMP())`,
-      [{ name: "name", value: { stringValue: name } }]
+  addMigrationRecord(
+    name: string,
+    callback: (err: any, value?: any) => any
+  ): Bluebird<any> {
+    return this.addPrivateTableData(
+      name,
+      this.internals.migrationTable,
+      callback
     );
+  }
+
+  addSeedRecord(
+    name: string,
+    callback: (err: any, value?: any) => any
+  ): Bluebird<any> {
+    return this.addPrivateTableData(name, this.internals.seedTable, callback);
   }
 
   addForeignKey(
@@ -455,6 +455,7 @@ export default class AuroraDataApiDriver extends BaseDriver {
       );
     } catch (ex) {
       console.error(ex);
+      throw ex;
     }
 
     return result;
