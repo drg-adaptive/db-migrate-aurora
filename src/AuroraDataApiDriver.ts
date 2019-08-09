@@ -10,7 +10,6 @@ import {
 const BaseDriver = require("db-migrate-base");
 
 import * as util from "util";
-import * as moment from "moment";
 import * as AWS from "aws-sdk";
 import Bluebird = require("bluebird");
 
@@ -99,7 +98,7 @@ export default class AuroraDataApiDriver extends BaseDriver {
   // @ts-ignore
   async startMigration(): Bluebird<any> {
     if (!this.internals.notransactions) {
-      const { transactionId } = await this.connection
+      const { transactionId } = await this.internals.connection
         .beginTransaction({
           resourceArn: this.internals.rdsParams.resourceArn,
           secretArn: this.internals.rdsParams.secretArn,
@@ -115,7 +114,7 @@ export default class AuroraDataApiDriver extends BaseDriver {
   // @ts-ignore
   async endMigration(): Bluebird<any> {
     if (!this.internals.notransactions) {
-      await this.connection
+      await this.internals.connection
         .commitTransaction({
           resourceArn: this.internals.rdsParams.resourceArn,
           secretArn: this.internals.rdsParams.secretArn,
@@ -355,22 +354,31 @@ export default class AuroraDataApiDriver extends BaseDriver {
     name: string,
     tableName: string
   ): Bluebird<any> {
-    var formattedDate = moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
     return this.runSql(
-      `INSERT INTO \`${tableName}\ (\`name\`, \`run_on\`) VALUES (:name, :run_on)`,
-      [
-        { name: "name", value: { stringValue: name } },
-        { name: "run_on", value: { stringValue: formattedDate } }
-      ]
+      `INSERT INTO \`${tableName}\` (name, run_on) VALUES (:name, CURRENT_TIMESTAMP())`,
+      [{ name: "name", value: { stringValue: name } }]
     );
   }
 
-  addMigrationRecord(name: string): Bluebird<any> {
-    return this.addPrivateTableData(name, this.internals.migrationTable);
+  addMigrationRecord(
+    name: string,
+    callback: (value: any) => any
+  ): Bluebird<any> {
+    const tableName = this.internals.migrationTable;
+    return this.runSql(
+      `INSERT INTO \`${tableName}\` (name, run_on) VALUES (:name, CURRENT_TIMESTAMP())`,
+      [{ name: "name", value: { stringValue: name } }]
+    )
+      .then(callback)
+      .catch((err: any) => callback(err));
   }
 
   addSeedRecord(name: string): Bluebird<any> {
-    return this.addPrivateTableData(name, this.internals.seedTable);
+    const tableName = this.internals.seedTable;
+    return this.runSql(
+      `INSERT INTO \`${tableName}\` (name, run_on) VALUES (:name, CURRENT_TIMESTAMP())`,
+      [{ name: "name", value: { stringValue: name } }]
+    );
   }
 
   addForeignKey(
@@ -413,11 +421,11 @@ export default class AuroraDataApiDriver extends BaseDriver {
     }
   }
 
-  runSql(
+  async runSql(
     sql?: string,
     parameters?: Array<AWS.RDSDataService.SqlParameter>
   ): Bluebird<any> {
-    this.internals.mod.log.sql.apply(null, arguments);
+    this.internals.mod.log.sql.apply(null, [sql, parameters]);
 
     if (this.internals.dryRun) {
       return Bluebird.resolve();
@@ -429,6 +437,7 @@ export default class AuroraDataApiDriver extends BaseDriver {
       database: this.internals.rdsParams.database,
       schema: this.internals.rdsParams.schema,
       transactionId: this.internals.currentTransaction,
+      includeResultMetadata: true,
       parameters,
       sql
     };
@@ -438,14 +447,50 @@ export default class AuroraDataApiDriver extends BaseDriver {
       this.internals.connection.executeStatement
     ).bind(this.internals.connection);
 
-    return exec(params);
+    let result;
+
+    try {
+      result = await exec(params).then(
+        AuroraDataApiDriver.convertResultsToObjects
+      );
+    } catch (ex) {
+      console.error(ex);
+    }
+
+    return result;
   }
 
-  all(sql: string, callback?: Function): Bluebird<any> | any {
+  private static convertResultsToObjects(
+    data: AWS.RDSDataService.ExecuteStatementResponse
+  ): Array<any> {
+    if (!data || !data.records) {
+      return [];
+    }
+
+    return data.records.map((record: AWS.RDSDataService.Field[]) => {
+      const result: { [key: string]: any } = {};
+
+      data.columnMetadata.forEach(
+        (value: AWS.RDSDataService.ColumnMetadata, idx: number) => {
+          result[value.name] =
+            record[idx].stringValue ||
+            record[idx].longValue ||
+            record[idx].doubleValue ||
+            record[idx].booleanValue ||
+            record[idx].blobValue;
+        }
+      );
+
+      return result;
+    });
+  }
+
+  // @ts-ignore
+  async all(sql: string, callback?: Function): Bluebird<any> | any {
     let result;
     let error;
     try {
-      result = this.runSql(sql);
+      result = await this.runSql(sql);
     } catch (ex) {
       error = ex;
     }
@@ -465,28 +510,3 @@ export default class AuroraDataApiDriver extends BaseDriver {
     return Bluebird.resolve();
   }
 }
-
-// function addSyncMethods() {
-//   Object.keys(AuroraDataApiDriver.prototype).forEach((key: string) => {
-//     if (!key.endsWith("Async")) {
-//       return;
-//     }
-
-//     // @ts-ignore
-//     const original = AuroraDataApiDriver.prototype[key] as (
-//       ...args: any[]
-//     ) => Bluebird<any>;
-//     const newKey = key.replace("Async", "");
-
-//     // @ts-ignore
-//     AuroraDataApiDriver.prototype[newKey] = function(...args: any[]) {
-//       const callback: CallbackFunction = args.pop();
-
-//       original.apply(this, args).then(callback);
-//     };
-//   });
-
-//   return AuroraDataApiDriver;
-// }
-
-// export default addSyncMethods();
