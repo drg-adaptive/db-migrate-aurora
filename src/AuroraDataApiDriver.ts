@@ -97,6 +97,8 @@ export default class AuroraDataApiDriver extends BaseDriver {
 
   // @ts-ignore
   async startMigration(): Bluebird<any> {
+    delete this.internals.currentTransaction;
+
     if (!this.internals.notransactions) {
       const { transactionId } = await this.internals.connection
         .beginTransaction({
