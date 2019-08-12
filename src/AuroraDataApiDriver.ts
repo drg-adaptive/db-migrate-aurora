@@ -431,6 +431,14 @@ export default class AuroraDataApiDriver extends BaseDriver {
       return Bluebird.resolve();
     }
 
+    if (parameters && sql.indexOf("?") >= 0) {
+      while (sql.indexOf("?") >= 0) {
+        sql = sql.replace("?", `"${parameters.shift()}"`);
+      }
+
+      console.info(sql);
+    }
+
     const params: AWS.RDSDataService.ExecuteStatementRequest = {
       secretArn: this.internals.rdsParams.secretArn,
       resourceArn: this.internals.rdsParams.resourceArn,
