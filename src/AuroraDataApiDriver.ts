@@ -495,7 +495,7 @@ export default class AuroraDataApiDriver extends BaseDriver {
         AuroraDataApiDriver.convertResultsToObjects
       );
     } catch (ex) {
-      console.error(ex);
+      console.error(`Error executing ${sql}: ${ex.message}`);
       throw ex;
     }
 
