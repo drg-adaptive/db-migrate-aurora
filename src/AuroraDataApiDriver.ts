@@ -93,12 +93,17 @@ export default class AuroraDataApiDriver extends BaseDriver {
       apiVersion: "2018-08-01",
       region: rdsParams.region
     });
+
+    // This is to protect
+    this.internals.notransactions = true;
+  }
+
+  getConnection(): AWS.RDSDataService {
+    return this.internals.connection;
   }
 
   // @ts-ignore
   async startMigration(): Bluebird<any> {
-    delete this.internals.currentTransaction;
-
     if (!this.internals.notransactions) {
       const { transactionId } = await this.internals.connection
         .beginTransaction({
@@ -123,6 +128,8 @@ export default class AuroraDataApiDriver extends BaseDriver {
           transactionId: this.internals.currentTransaction
         })
         .promise();
+
+      delete this.internals.currentTransaction;
     }
   }
 
