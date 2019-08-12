@@ -374,6 +374,39 @@ export default class AuroraDataApiDriver extends BaseDriver {
     );
   }
 
+  /**
+   * Deletes a migration
+   *
+   * @param migrationName   - The name of the migration to be deleted
+   */
+  async deleteMigration(migrationName: string, callback: CallableFunction) {
+    var sql = `DELETE FROM ${this._escapeDDL}${this.internals.migrationTable}${
+      this._escapeDDL
+    }  WHERE name = :name`;
+    let result, error;
+
+    try {
+      result = this.runSql(sql, [
+        {
+          name: "name",
+          value: {
+            stringValue: migrationName
+          }
+        }
+      ]);
+    } catch (ex) {
+      error = ex;
+    }
+
+    if (callback) {
+      return callback(error, result);
+    } else if (error) {
+      throw error;
+    }
+
+    return result;
+  }
+
   addSeedRecord(
     name: string,
     callback: (err: any, value?: any) => any
