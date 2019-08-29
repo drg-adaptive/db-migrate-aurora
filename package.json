@@ -38,7 +38,7 @@
   "bugs": "https://github.com/drg-adaptive/db-migrate-aurora/issues",
   "homepage": "https://github.com/drg-adaptive/db-migrate-aurora",
   "dependencies": {
-    "aws-sdk": "^2.505.0",
+    "aws-sdk": "^2.519.0",
     "db-migrate-base": "^2.0.0"
   },
   "peerDependencies": {

@@ -105,32 +105,38 @@ export default class AuroraDataApiDriver extends BaseDriver {
   // @ts-ignore
   async startMigration(): Bluebird<any> {
     if (!this.internals.notransactions) {
-      const { transactionId } = await this.internals.connection
-        .beginTransaction({
-          resourceArn: this.internals.rdsParams.resourceArn,
-          secretArn: this.internals.rdsParams.secretArn,
-          database: this.internals.rdsParams.database,
-          schema: this.internals.rdsParams.schema
-        })
-        .promise();
-
-      this.internals.currentTransaction = transactionId;
+      await this.startTransaction();
     }
+  }
+
+  async startTransaction() {
+    const { transactionId } = await this.internals.connection
+      .beginTransaction({
+        resourceArn: this.internals.rdsParams.resourceArn,
+        secretArn: this.internals.rdsParams.secretArn,
+        database: this.internals.rdsParams.database,
+        schema: this.internals.rdsParams.schema
+      })
+      .promise();
+    this.internals.currentTransaction = transactionId;
   }
 
   // @ts-ignore
   async endMigration(): Bluebird<any> {
     if (!this.internals.notransactions) {
-      await this.internals.connection
-        .commitTransaction({
-          resourceArn: this.internals.rdsParams.resourceArn,
-          secretArn: this.internals.rdsParams.secretArn,
-          transactionId: this.internals.currentTransaction
-        })
-        .promise();
-
-      delete this.internals.currentTransaction;
+      await this.commitTransaction();
     }
+  }
+
+  async commitTransaction() {
+    await this.internals.connection
+      .commitTransaction({
+        resourceArn: this.internals.rdsParams.resourceArn,
+        secretArn: this.internals.rdsParams.secretArn,
+        transactionId: this.internals.currentTransaction
+      })
+      .promise();
+    delete this.internals.currentTransaction;
   }
 
   mapDataType(spec: any) {
