@@ -27,7 +27,7 @@ See [db-migrate](https://db-migrate.readthedocs.io/en/latest/) for more informat
 
 Add the following configuration to your `database.json` file:
 
-```json
+```javascript
 {
   "prod": {
     "driver": {
