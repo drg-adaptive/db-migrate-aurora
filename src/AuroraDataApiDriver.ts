@@ -76,6 +76,8 @@ export interface RDSParams {
   database?: string;
   schema?: string;
   region: string;
+  maxRetries?: number;
+  connectTimeout?: number;
 }
 
 export default class AuroraDataApiDriver extends BaseDriver {
@@ -92,9 +94,12 @@ export default class AuroraDataApiDriver extends BaseDriver {
     this.internals.connection = new AWS.RDSDataService({
       apiVersion: "2018-08-01",
       region: rdsParams.region,
-      maxRetries: 3,
+      maxRetries: rdsParams.maxRetries !== undefined ? rdsParams.maxRetries : 3,
       httpOptions: {
-        connectTimeout: 45000
+        connectTimeout:
+          rdsParams.connectTimeout !== undefined
+            ? rdsParams.connectTimeout
+            : 45000
       }
     });
 
@@ -354,9 +359,7 @@ export default class AuroraDataApiDriver extends BaseDriver {
     columnSpec: ColumnSpec & IColumnSpec
   ): Bluebird<any> {
     var constraint = this.createColumnDef(columnName, columnSpec);
-    var sql = `ALTER TABLE \`${tableName}\` CHANGE COLUMN \`${columnName}\` ${
-      constraint.constraints
-    }`;
+    var sql = `ALTER TABLE \`${tableName}\` CHANGE COLUMN \`${columnName}\` ${constraint.constraints}`;
 
     if (columnSpec.unique === false) {
       await this.removeIndex(tableName, columnName);
@@ -399,9 +402,7 @@ export default class AuroraDataApiDriver extends BaseDriver {
    * @param migrationName   - The name of the migration to be deleted
    */
   async deleteMigration(migrationName: string, callback: CallableFunction) {
-    var sql = `DELETE FROM ${this._escapeDDL}${this.internals.migrationTable}${
-      this._escapeDDL
-    }  WHERE name = :name`;
+    var sql = `DELETE FROM ${this._escapeDDL}${this.internals.migrationTable}${this._escapeDDL}  WHERE name = :name`;
     let result, error;
 
     try {

@@ -33,11 +33,13 @@ Add the following configuration to your `database.json` file:
     "driver": {
       "require": "db-migrate-aurora"
     },
-    "database": "name of database on server...",
-    "schema": "name of schema in database...",
+    "database": "name of database on server...", // OPTIONAL
+    "schema": "name of schema in database...", // OPTIONAL
     "secretArn": "ARN of a secret store containing credentials for the cluster",
     "resourceArn": "ARN of the cluster to connect to",
-    "region": "The AWS region of the cluster (ex: us-east-1)"
+    "region": "us-east-1", // The AWS region of the cluster
+    "maxRetries": 3, // OPTIONAL: number of times to retry connecting
+    "connectTimeout": 45000 // OPTIONAL: number of milliseconds to wait until timing out the connection
   }
 }
 ```
