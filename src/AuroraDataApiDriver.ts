@@ -91,7 +91,11 @@ export default class AuroraDataApiDriver extends BaseDriver {
     this.internals.rdsParams = rdsParams;
     this.internals.connection = new AWS.RDSDataService({
       apiVersion: "2018-08-01",
-      region: rdsParams.region
+      region: rdsParams.region,
+      maxRetries: 3,
+      httpOptions: {
+        connectTimeout: 45000
+      }
     });
 
     // This is to protect
