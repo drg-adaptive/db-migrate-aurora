@@ -78,6 +78,7 @@ export interface RDSParams {
   region: string;
   maxRetries?: number;
   connectTimeout?: number;
+  endpointUrl?: string;
 }
 
 export default class AuroraDataApiDriver extends BaseDriver {
@@ -94,6 +95,7 @@ export default class AuroraDataApiDriver extends BaseDriver {
     this.internals.connection = new AWS.RDSDataService({
       apiVersion: "2018-08-01",
       region: rdsParams.region,
+      endpoint: rdsParams.endpointUrl || undefined,
       maxRetries: rdsParams.maxRetries !== undefined ? rdsParams.maxRetries : 3,
       httpOptions: {
         connectTimeout:
